@@ -1,0 +1,1493 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>LTSD - LT Studio Design</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+        @font-face {
+            font-family: 'butler_medium';
+            src: url('assets/fonts/butler-medium.woff2') format('woff2'),
+                 url('assets/fonts/butler-medium.woff') format('woff');
+            font-weight: 500;
+            font-style: normal;
+            font-display: swap;
+        }
+        
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'butler_medium', 'Times New Roman', serif;
+            background: #252525;
+            color: white;
+            overflow: hidden;
+            cursor: none;
+        }
+        
+        /* INTRO SCREEN */
+        #intro-screen {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            background: #252525;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+            transition: opacity 1s ease, transform 1s ease;
+        }
+        
+        #intro-screen.hidden {
+            opacity: 0;
+            pointer-events: none;
+        }
+
+        /* TRANSICIÓN FRAGMENTADA SIMPLIFICADA */
+        .fragment-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            z-index: 2000;
+            pointer-events: none;
+            opacity: 0;
+            background: #252525;
+        }
+
+        .fragment-overlay.active {
+            opacity: 1;
+        }
+
+        .fragment {
+            position: absolute;
+            background: #252525;
+            transition: all 1s ease-out;
+        }
+
+        .fragment.animate-out {
+            transform: translateX(var(--dx)) translateY(var(--dy)) rotate(var(--rotation)) scale(0);
+            opacity: 0;
+        }
+        
+        .intro-text {
+            font-size: 48px;
+            font-weight: 300;
+            letter-spacing: 8px;
+            text-align: center;
+            font-family: 'butler_medium', serif;
+        }
+
+        .intro-text .letter {
+            display: inline-block;
+            color: #444;
+            transition: color 0.8s ease;
+        }
+
+        .intro-text .letter.filled {
+            color: white;
+        }
+        
+        /* PARTICLES */
+        #particles {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+        }
+        
+        .particle {
+            position: absolute;
+            background: white;
+            border-radius: 50%;
+            opacity: 0.3;
+            animation: float 6s ease-in-out infinite;
+        }
+        
+        @keyframes float {
+            0%, 100% { transform: translateY(0px) rotate(0deg); }
+            33% { transform: translateY(-30px) rotate(120deg); }
+            66% { transform: translateY(30px) rotate(240deg); }
+        }
+        
+        /* MAIN SCREEN */
+        #main-screen {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            opacity: 0;
+            transform: scale(1.2);
+            transition: opacity 1s ease, transform 1s ease;
+            z-index: 100;
+        }
+
+        /* FONDO COMPLETO CON TRANSICIONES 3D */
+        .full-background {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            background-size: cover;
+            background-position: center;
+            background-repeat: no-repeat;
+            background-color: #252525;
+            opacity: 0.6;
+            z-index: 0;
+            transition: all 1.2s cubic-bezier(0.25, 0.46, 0.45, 0.94), background-image 0.8s ease, transform 0.8s ease;
+            transform: scale(1) rotate(0deg);
+        }
+
+        .full-background.active {
+            opacity: 0.8;
+        }
+
+        .full-background.transitioning {
+            transform: scale(1.05) rotate(0.5deg);
+            opacity: 0.4;
+        }
+        
+        #main-screen.visible {
+            opacity: 1;
+            transform: scale(1);
+        }
+        
+        /* LOGO */
+        .logo {
+            position: fixed;
+            top: 30px;
+            left: 30px;
+            font-size: 24px;
+            font-weight: 500;
+            letter-spacing: 4px;
+            z-index: 200;
+            mix-blend-mode: exclusion;
+            font-family: 'butler_medium', serif;
+        }
+
+        /* NAVEGACIÓN SUPERIOR */
+        .top-nav {
+            position: fixed;
+            top: 30px;
+            right: 30px;
+            display: flex;
+            gap: 30px;
+            z-index: 200;
+            font-family: 'butler_medium', serif;
+        }
+
+        .top-nav-item {
+            color: rgba(255, 255, 255, 0.6);
+            font-size: 14px;
+            font-weight: 300;
+            letter-spacing: 1px;
+            text-transform: uppercase;
+            cursor: pointer;
+            transition: color 0.3s ease;
+            text-decoration: none;
+        }
+
+        .top-nav-item:hover,
+        .top-nav-item.active {
+            color: white;
+        }
+
+        /* MODAL ALL PROJECTS */
+        .all-modal {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            background: rgba(37, 37, 37, 0.95);
+            backdrop-filter: blur(10px);
+            display: none;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+        }
+
+        .all-modal.visible {
+            display: flex;
+        }
+
+        .modal-content {
+            max-width: 1200px;
+            width: 90%;
+            max-height: 80vh;
+            overflow-y: auto;
+            padding: 40px;
+        }
+
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 40px;
+        }
+
+        .modal-title {
+            font-size: 32px;
+            font-weight: 300;
+            letter-spacing: 2px;
+            font-family: 'butler_medium', serif;
+        }
+
+        .close-modal {
+            background: none;
+            border: none;
+            color: white;
+            font-size: 24px;
+            cursor: pointer;
+            padding: 10px;
+        }
+
+        .projects-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 30px;
+        }
+
+        .project-card {
+            aspect-ratio: 4/3;
+            background-size: cover;
+            background-position: center;
+            border-radius: 8px;
+            position: relative;
+            cursor: pointer;
+            transition: transform 0.3s ease;
+        }
+
+        .project-card:hover {
+            transform: scale(1.05);
+        }
+
+        .project-card-overlay {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            background: linear-gradient(transparent, rgba(0,0,0,0.8));
+            padding: 20px;
+            border-radius: 0 0 8px 8px;
+        }
+
+        .project-card-title {
+            font-size: 18px;
+            font-weight: 500;
+            margin-bottom: 5px;
+        }
+
+        .project-card-location {
+            font-size: 14px;
+            opacity: 0.7;
+        }
+        
+        /* CIRCLE CONTAINER ESTÁTICO */
+        .circle-container {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 600px;
+            height: 600px;
+            z-index: 150;
+            border-radius: 50%;
+            overflow: hidden;
+            background: inherit;
+        }
+        
+        /* CIRCLE BORDER ESTÁTICO CON SOLO EFECTO DE COLOR */
+        .circle-border {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            border: 2px solid rgba(255, 255, 255, 0.4);
+            border-radius: 50%;
+            z-index: 3;
+            mix-blend-mode: exclusion;
+            transition: border-color 0.3s ease;
+        }
+
+        .circle-border.water-effect {
+            animation: waterColorWave 1.5s ease-out;
+        }
+
+        @keyframes waterColorWave {
+            0% {
+                border-color: rgba(255, 255, 255, 0.4);
+            }
+            25% {
+                border-color: rgba(255, 255, 255, 0.8);
+            }
+            50% {
+                border-color: rgba(255, 255, 255, 0.6);
+            }
+            75% {
+                border-color: rgba(255, 255, 255, 0.7);
+            }
+            100% {
+                border-color: rgba(255, 255, 255, 0.4);
+            }
+        }
+
+        .circle-inner {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 90%;
+            height: 90%;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 50%;
+            mix-blend-mode: overlay;
+            /* Sin transiciones - completamente estático */
+        }
+
+        /* BARRA CIRCULAR DE PROGRESO FINA EN EL EXTERIOR */
+        .circular-progress-bar {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 108%;
+            height: 108%;
+            z-index: 4;
+            cursor: grab;
+            pointer-events: auto;
+        }
+
+        .circular-progress-bar:active {
+            cursor: grabbing;
+        }
+
+        /* Círculo de fondo - sin mostrar */
+        .progress-circle-bg-css {
+            display: none;
+        }
+
+        /* Círculo de progreso MUY FINO en el exterior */
+        .progress-circle-fill-css {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 100%;
+            height: 100%;
+            border-radius: 50%;
+            background: conic-gradient(
+                from -90deg,
+                rgba(255, 255, 255, 0.9) 0deg,
+                rgba(255, 255, 255, 0.9) 0deg,
+                transparent 0deg,
+                transparent 360deg
+            );
+            mask: radial-gradient(circle, transparent 49%, black 49%, black 51%, transparent 51%);
+            -webkit-mask: radial-gradient(circle, transparent 49%, black 49%, black 51%, transparent 51%);
+            transition: background 0.4s ease;
+            z-index: 5;
+        }
+
+        /* Efecto de pulso durante carga */
+        .progress-circle-fill-css.loading {
+            animation: progressPulse 2s ease-in-out infinite;
+        }
+
+        @keyframes progressPulse {
+            0%, 100% {
+                box-shadow: 0 0 15px rgba(255, 255, 255, 0.3);
+            }
+            50% {
+                box-shadow: 0 0 25px rgba(255, 255, 255, 0.6);
+            }
+        }
+
+        /* PUNTOS DE PROYECTOS ARRASTRABLES */
+        .project-dots {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+        }
+
+        .project-dot {
+            position: absolute;
+            width: 8px;
+            height: 8px;
+            background: rgba(255, 255, 255, 0.5);
+            border-radius: 50%;
+            transition: all 0.3s ease;
+            transform: translate(-50%, -50%);
+            border: 2px solid rgba(255, 255, 255, 0.3);
+            cursor: pointer;
+            pointer-events: auto;
+            z-index: 10;
+        }
+
+        .project-dot:hover {
+            background: rgba(255, 255, 255, 0.8);
+            transform: translate(-50%, -50%) scale(1.3);
+            border-color: rgba(255, 255, 255, 0.6);
+        }
+
+        .project-dot.active {
+            background: white;
+            transform: translate(-50%, -50%) scale(1.5);
+            box-shadow: 0 0 12px rgba(255, 255, 255, 0.9);
+            border-color: white;
+            border-width: 3px;
+        }
+        
+        /* PROJECT TEXT CON TRANSICIONES SUAVES */
+        .project-text {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            text-align: center;
+            z-index: 4;
+            opacity: 0;
+            transition: opacity 0.8s ease, transform 0.8s ease;
+        }
+        
+        .project-text.active {
+            opacity: 1;
+            transform: translate(-50%, -50%) scale(1);
+        }
+
+        .project-text:not(.active) {
+            transform: translate(-50%, -50%) scale(0.9);
+        }
+        
+        .project-name {
+            font-size: 32px;
+            font-weight: 600;
+            margin-bottom: 8px;
+            text-shadow: 2px 2px 10px rgba(0,0,0,0.8);
+        }
+        
+        .project-location {
+            font-size: 16px;
+            font-weight: 300;
+            opacity: 0.8;
+            text-shadow: 1px 1px 5px rgba(0,0,0,0.8);
+        }
+        
+        /* NAVIGATION LATERAL */
+        .nav-prev {
+            position: fixed;
+            left: calc(50% - 500px);
+            top: 50%;
+            transform: translateY(-50%);
+            display: flex;
+            align-items: center;
+            z-index: 200;
+        }
+
+        .nav-next {
+            position: fixed;
+            right: calc(50% - 500px);
+            top: 50%;
+            transform: translateY(-50%);
+            display: flex;
+            align-items: center;
+            z-index: 200;
+        }
+
+        .nav-line {
+            width: 100px;
+            height: 1px;
+            background: rgba(255, 255, 255, 0.3);
+            margin: 0 20px;
+        }
+
+        .nav-button {
+            background: none;
+            border: none;
+            color: rgba(255, 255, 255, 0.6);
+            font-size: 14px;
+            font-weight: 300;
+            letter-spacing: 1px;
+            cursor: pointer;
+            transition: color 0.3s ease;
+            font-family: 'butler_medium', serif;
+            text-transform: uppercase;
+        }
+
+        .nav-button:hover {
+            color: white;
+        }
+
+        .nav-button:disabled {
+            opacity: 0.3;
+            cursor: not-allowed;
+        }
+
+        /* PROGRESS BAR ABAJO DERECHA */
+        .progress-info {
+            position: fixed;
+            bottom: 50px;
+            right: 50px;
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            z-index: 200;
+            font-family: 'butler_medium', serif;
+        }
+
+        .project-number {
+            color: white;
+            font-size: 16px;
+            font-weight: 300;
+            min-width: 20px;
+        }
+
+        .progress-container {
+            width: 80px;
+            height: 2px;
+            background: rgba(255, 255, 255, 0.2);
+        }
+
+        .progress-bar {
+            height: 100%;
+            background: white;
+            width: 0%;
+            transition: width 0.1s linear;
+        }
+
+        .project-total {
+            color: rgba(255, 255, 255, 0.6);
+            font-size: 16px;
+            font-weight: 300;
+        }
+        
+        /* CURSOR CUSTOM */
+        .custom-cursor {
+            position: fixed;
+            width: 20px;
+            height: 20px;
+            background: rgba(255, 255, 255, 0.8);
+            border-radius: 50%;
+            pointer-events: none;
+            z-index: 9999;
+            mix-blend-mode: exclusion;
+            transition: transform 0.1s ease;
+        }
+        
+        /* RESPONSIVE */
+        @media (max-width: 768px) {
+            .intro-text {
+                font-size: 2.5rem;
+            }
+            
+            .circle-container {
+                width: 400px;
+                height: 400px;
+            }
+            
+            .project-name {
+                font-size: 24px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- CURSOR PERSONALIZADO -->
+    <div class="custom-cursor" id="cursor"></div>
+    
+    <!-- INTRO SCREEN -->
+    <div id="intro-screen">
+        <div id="particles"></div>
+        <div class="intro-text"></div>
+    </div>
+
+    <!-- TRANSICIÓN FRAGMENTADA -->
+    <div class="fragment-overlay" id="fragment-overlay"></div>
+    
+    <!-- FONDO COMPLETO -->
+    <div class="full-background" id="full-bg"></div>
+
+    <!-- MAIN SCREEN -->
+    <div id="main-screen">
+        <!-- LOGO -->
+        <div class="logo">LTSD</div>
+
+        <!-- NAVEGACIÓN SUPERIOR -->
+        <div class="top-nav">
+            <div class="top-nav-item" onclick="showAllProjects()">all</div>
+            <div class="top-nav-item" onclick="showAbout()">about</div>
+        </div>
+        
+        <!-- CÍRCULO INTERACTIVO -->
+        <div class="circle-container">
+            
+            <!-- BORDE DEL CÍRCULO -->
+            <div class="circle-border"></div>
+            <div class="circle-inner"></div>
+
+            <!-- BARRA CIRCULAR DE PROGRESO CON CSS -->
+            <div class="circular-progress-bar" id="circular-progress-bar">
+                <!-- Círculo de fondo -->
+                <div class="progress-circle-bg-css"></div>
+                <!-- Círculo de progreso -->
+                <div class="progress-circle-fill-css" id="progress-circle-css"></div>
+                <div class="project-dots" id="project-dots">
+                    <!-- Se generan dinámicamente -->
+                </div>
+            </div>
+            
+            <!-- TEXTO DEL PROYECTO -->
+            <div class="project-text" data-project="0">
+                <div class="project-name">PARK MANSION</div>
+                <div class="project-location">Minami Azabu</div>
+            </div>
+            <div class="project-text" data-project="1">
+                <div class="project-name">KAWANA</div>
+                <div class="project-location">Silence Kawana</div>
+            </div>
+            <div class="project-text" data-project="2">
+                <div class="project-name">PARK LE JADE</div>
+                <div class="project-location">Shirokane Residence</div>
+            </div>
+            <div class="project-text" data-project="3">
+                <div class="project-name">SEVENS VILLA</div>
+                <div class="project-location">Karuizawa</div>
+            </div>
+            <div class="project-text" data-project="4">
+                <div class="project-name">HIKAWA GARDENS</div>
+                <div class="project-location">Tokyo</div>
+            </div>
+            <div class="project-text" data-project="5">
+                <div class="project-name">ONE AVENUE</div>
+                <div class="project-location">Central District</div>
+            </div>
+            <div class="project-text" data-project="6">
+                <div class="project-name">CENTURY FOREST</div>
+                <div class="project-location">Urban Integration</div>
+            </div>
+            <div class="project-text" data-project="7">
+                <div class="project-name">PROUD</div>
+                <div class="project-location">Rokakoen</div>
+            </div>
+            <div class="project-text" data-project="8">
+                <div class="project-name">NISHIAZABU RESIDENCE</div>
+                <div class="project-location">Nishiazabu</div>
+            </div>
+            <div class="project-text" data-project="9">
+                <div class="project-name">ITOHPIA JIYUGAOKA</div>
+                <div class="project-location">Jiyugaoka</div>
+            </div>
+            <div class="project-text" data-project="10">
+                <div class="project-name">URBAN VILLA</div>
+                <div class="project-location">Central Tokyo</div>
+            </div>
+            <div class="project-text" data-project="11">
+                <div class="project-name">MODERN HOUSE</div>
+                <div class="project-location">Shibuya</div>
+            </div>
+        </div>
+        
+        <!-- NAVEGACIÓN LATERAL -->
+        <div class="nav-prev">
+            <button class="nav-button" id="prev-btn" onclick="previousProject()">prev</button>
+            <div class="nav-line"></div>
+        </div>
+
+        <div class="nav-next">
+            <div class="nav-line"></div>
+            <button class="nav-button" id="next-btn" onclick="nextProject()">next</button>
+        </div>
+
+        <!-- PROGRESO ABAJO DERECHA -->
+        <div class="progress-info">
+            <div class="project-number" id="current-num">1</div>
+            <div class="progress-container">
+                <div class="progress-bar" id="progress-bar"></div>
+            </div>
+            <div class="project-total">12</div>
+        </div>
+    </div>
+
+    <!-- MODAL ALL PROJECTS -->
+    <div class="all-modal" id="all-modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <div class="modal-title">All Projects</div>
+                <button class="close-modal" onclick="closeAllProjects()">×</button>
+            </div>
+            <div class="projects-grid" id="projects-grid">
+                <!-- Se llena dinámicamente -->
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL ABOUT -->
+    <div class="all-modal" id="about-modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <div class="modal-title">About LT Studio Design</div>
+                <button class="close-modal" onclick="closeAbout()">×</button>
+            </div>
+            <div style="line-height: 1.6; opacity: 0.9;">
+                <p style="margin-bottom: 20px;">
+                    LT Studio Design es un estudio de arquitectura contemporánea que se especializa en crear
+                    espacios únicos que combinan funcionalidad, estética y sostenibilidad.
+                </p>
+                <p style="margin-bottom: 20px;">
+                    Nuestro enfoque se centra en entender las necesidades específicas de cada cliente y
+                    traducirlas en diseños arquitectónicos innovadores que respetan el entorno y maximizan
+                    la experiencia del usuario.
+                </p>
+                <p style="margin-bottom: 20px;">
+                    Cada proyecto es una oportunidad para explorar nuevas formas de habitar el espacio,
+                    integrando tecnología avanzada con materiales nobles y técnicas constructivas sostenibles.
+                </p>
+                <div style="margin-top: 40px; padding-top: 20px; border-top: 1px solid rgba(255,255,255,0.2);">
+                    <strong>Servicios:</strong><br>
+                    • Diseño Arquitectónico<br>
+                    • Planificación Urbana<br>
+                    • Diseño de Interiores<br>
+                    • Consultoría en Sostenibilidad<br>
+                    • Gestión de Proyectos
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // CONFIGURACIÓN
+        const PROJECTS = [
+            {
+                name: 'PARK MANSION',
+                location: 'Minami Azabu',
+                image: 'images/projects/park-mansion/main.jpg',
+                duration: 4000
+            },
+            {
+                name: 'KAWANA',
+                location: 'Silence Kawana',
+                image: 'images/projects/kawana/main.jpg',
+                duration: 4000
+            },
+            {
+                name: 'PARK LE JADE',
+                location: 'Shirokane Residence',
+                image: 'images/projects/park-le-jade/main.jpg',
+                duration: 4000
+            },
+            {
+                name: 'SEVENS VILLA',
+                location: 'Karuizawa',
+                image: 'images/projects/sevens-villa/main.jpg',
+                duration: 4000
+            },
+            {
+                name: 'HIKAWA GARDENS',
+                location: 'Tokyo',
+                image: 'images/projects/hikawa-gardens/main.jpg',
+                duration: 4000
+            },
+            {
+                name: 'ONE AVENUE',
+                location: 'Central District',
+                image: 'images/projects/one-avenue/main.jpg',
+                duration: 4000
+            },
+            {
+                name: 'CENTURY FOREST',
+                location: 'Urban Integration',
+                image: 'images/projects/century-forest/main.jpg',
+                duration: 4000
+            },
+            {
+                name: 'PROUD',
+                location: 'Rokakoen',
+                image: 'images/projects/proud/main.jpg',
+                duration: 4000
+            },
+            {
+                name: 'NISHIAZABU RESIDENCE',
+                location: 'Nishiazabu',
+                image: 'images/projects/nishiazabu-residence/main.jpg',
+                duration: 4000
+            },
+            {
+                name: 'ITOHPIA JIYUGAOKA',
+                location: 'Jiyugaoka',
+                image: 'images/projects/itohpia-jiyugaoka/main.jpg',
+                duration: 4000
+            },
+            {
+                name: 'URBAN VILLA',
+                location: 'Central Tokyo',
+                image: 'images/projects/urban-villa/main.jpg',
+                duration: 4000
+            },
+            {
+                name: 'MODERN HOUSE',
+                location: 'Shibuya',
+                image: 'images/projects/modern-house/main.jpg',
+                duration: 4000
+            }
+        ];
+        
+        let currentProject = 0;
+        let projectTimer = null;
+        let progressTimer = null;
+        
+        // CURSOR PERSONALIZADO
+        const cursor = document.getElementById('cursor');
+        let isOverCircle = false;
+
+        document.addEventListener('mousemove', (e) => {
+            cursor.style.left = e.clientX - 10 + 'px';
+            cursor.style.top = e.clientY - 10 + 'px';
+        });
+
+        // INTERACCIÓN CON EL CÍRCULO Y BARRA CIRCULAR
+        let isDragging = false;
+        let dragStartY = 0;
+        let dragStartProject = 0;
+        let isCircularDrag = false;
+
+        function setupCircleInteraction() {
+            const circleContainer = document.querySelector('.circle-container');
+            const circleBorder = document.querySelector('.circle-border');
+            const circleInner = document.querySelector('.circle-inner');
+            const progressBar = document.querySelector('.circular-progress-bar');
+
+            if (circleContainer) {
+                // Hover effects
+                circleContainer.addEventListener('mouseenter', () => {
+                    isOverCircle = true;
+                    cursor.style.transform = 'scale(2)';
+                    cursor.style.mixBlendMode = 'exclusion';
+                    circleBorder.style.borderColor = 'rgba(255, 255, 255, 0.8)';
+                    if (circleInner) {
+                        circleInner.style.borderColor = 'rgba(255, 255, 255, 0.2)';
+                    }
+                });
+
+                circleContainer.addEventListener('mouseleave', () => {
+                    isOverCircle = false;
+                    cursor.style.transform = 'scale(1)';
+                    cursor.style.mixBlendMode = 'difference';
+                    circleBorder.style.borderColor = 'rgba(255, 255, 255, 0.4)';
+                    if (circleInner) {
+                        circleInner.style.borderColor = 'rgba(255, 255, 255, 0.1)';
+                    }
+                });
+
+                // Drag functionality
+                circleContainer.addEventListener('mousedown', (e) => {
+                    isDragging = true;
+                    dragStartY = e.clientY;
+                    dragStartProject = currentProject;
+                    circleContainer.style.cursor = 'grabbing';
+                    e.preventDefault();
+                });
+
+                document.addEventListener('mousemove', (e) => {
+                    if (isDragging) {
+                        const deltaY = e.clientY - dragStartY;
+                        const sensitivity = 40;
+                        const projectChange = Math.floor(deltaY / sensitivity);
+
+                        let newProject = dragStartProject + projectChange;
+                        newProject = Math.max(0, Math.min(PROJECTS.length - 1, newProject));
+
+                        if (newProject !== currentProject) {
+                            console.log(`🎯 Cambiando proyecto por drag: ${currentProject} → ${newProject}`);
+                            changeProject(newProject);
+                        }
+                        
+                        circleContainer.style.transform = 'translate(-50%, -50%) scale(0.98)';
+                    }
+                });
+
+                document.addEventListener('mouseup', () => {
+                    if (isDragging) {
+                        isDragging = false;
+                        circleContainer.style.cursor = '';
+                        circleContainer.style.transform = 'translate(-50%, -50%) scale(1)';
+                        console.log('🎯 Drag terminado, reiniciando progreso');
+                        setTimeout(() => {
+                            startProgress();
+                        }, 500);
+                    }
+                });
+
+                // INTERACCIÓN SIMPLE CON LA BARRA CIRCULAR
+                if (progressBar) {
+                    console.log('🎯 Configurando interacción simple con barra circular');
+
+                    // Solo click, sin drag problemático
+                    progressBar.addEventListener('click', (e) => {
+                        const rect = progressBar.getBoundingClientRect();
+                        const centerX = rect.left + rect.width / 2;
+                        const centerY = rect.top + rect.height / 2;
+
+                        const angle = Math.atan2(e.clientY - centerY, e.clientX - centerX);
+                        let normalizedAngle = (angle + Math.PI / 2) / (Math.PI * 2);
+                        if (normalizedAngle < 0) normalizedAngle += 1;
+
+                        const newProject = Math.floor(normalizedAngle * PROJECTS.length);
+                        const clampedProject = Math.max(0, Math.min(PROJECTS.length - 1, newProject));
+
+                        console.log(`🎯 Click en barra: proyecto ${clampedProject + 1}`);
+
+                        if (clampedProject !== currentProject) {
+                            changeProject(clampedProject);
+                            startProgress();
+                        }
+
+                        e.preventDefault();
+                        e.stopPropagation();
+                    });
+
+                    progressBar.addEventListener('mouseenter', () => {
+                        progressBar.style.cursor = 'pointer';
+                    });
+
+                    progressBar.addEventListener('mouseleave', () => {
+                        progressBar.style.cursor = 'default';
+                    });
+                }
+            }
+        }
+        
+        // TRANSICIÓN FRAGMENTADA SIMPLIFICADA
+        function startFragmentTransition() {
+            console.log('🌟 Iniciando transición fragmentada');
+
+            const introScreen = document.getElementById('intro-screen');
+            const mainScreen = document.getElementById('main-screen');
+
+            introScreen.style.transition = 'opacity 1s ease-out';
+            introScreen.style.opacity = '0';
+
+            setTimeout(() => {
+                introScreen.classList.add('hidden');
+                introScreen.style.display = 'none';
+
+                mainScreen.classList.add('visible');
+                mainScreen.style.opacity = '1';
+                mainScreen.style.transform = 'scale(1)';
+
+                console.log('✅ Transición completada - Main screen visible');
+
+                setTimeout(() => {
+                    changeProject(0);
+                    startProgress();
+                    console.log('✅ Main screen inicializado con proyecto 0');
+                }, 300);
+            }, 1000);
+        }
+
+        // CREAR PARTÍCULAS
+        function createParticles() {
+            const particlesContainer = document.getElementById('particles');
+
+            for (let i = 0; i < 50; i++) {
+                const particle = document.createElement('div');
+                particle.className = 'particle';
+                particle.style.left = Math.random() * 100 + '%';
+                particle.style.top = Math.random() * 100 + '%';
+                particle.style.width = (Math.random() * 4 + 1) + 'px';
+                particle.style.height = particle.style.width;
+                particle.style.animationDelay = Math.random() * 6 + 's';
+                particle.style.animationDuration = (Math.random() * 4 + 4) + 's';
+
+                particlesContainer.appendChild(particle);
+            }
+        }
+
+        // ANIMAR TEXTO LETRA POR LETRA CON EXPLOSIÓN
+        function animateIntroText() {
+            console.log('📝 Iniciando animación de texto intro');
+            const introText = document.querySelector('.intro-text');
+            const text = 'LT STUDIO DESIGN';
+
+            if (!introText) {
+                console.error('❌ No se encontró .intro-text');
+                return;
+            }
+
+            introText.innerHTML = '';
+
+            const letters = [];
+            text.split('').forEach((letter, index) => {
+                const span = document.createElement('span');
+                span.className = 'letter';
+                span.textContent = letter === ' ' ? '\u00A0' : letter;
+                introText.appendChild(span);
+                letters.push(span);
+            });
+
+            console.log(`📝 Creadas ${letters.length} letras`);
+
+            letters.forEach((letter, index) => {
+                setTimeout(() => {
+                    letter.classList.add('filled');
+                    console.log(`📝 Letra ${index + 1} animada`);
+
+                    if (index === letters.length - 1) {
+                        console.log('🎯 Última letra completada, programando EXPLOSIÓN');
+                        setTimeout(() => {
+                            console.log('💥 EXPLOSIÓN ESPECTACULAR!');
+
+                            const introScreen = document.getElementById('intro-screen');
+                            const mainScreen = document.getElementById('main-screen');
+
+                            letters.forEach((letter, i) => {
+                                const rect = letter.getBoundingClientRect();
+
+                                for (let j = 0; j < 5; j++) {
+                                    const flying = letter.cloneNode(true);
+                                    flying.style.position = 'fixed';
+                                    flying.style.zIndex = '10000';
+                                    flying.style.fontSize = '2rem';
+                                    flying.style.fontWeight = 'bold';
+                                    flying.style.color = '#fff';
+                                    flying.style.pointerEvents = 'none';
+                                    flying.style.willChange = 'transform';
+                                    flying.style.left = rect.left + 'px';
+                                    flying.style.top = rect.top + 'px';
+
+                                    document.body.appendChild(flying);
+
+                                    const angle = (Math.PI * 2 * j / 5) + (Math.random() * 0.8 - 0.4);
+                                    const distance = 400 + Math.random() * 500;
+                                    const endX = rect.left + Math.cos(angle) * distance;
+                                    const endY = rect.top + Math.sin(angle) * distance + (Math.random() * 200 - 100);
+
+                                    flying.style.transition = `all ${1.5 + Math.random() * 1}s cubic-bezier(0.25, 0.46, 0.45, 0.94)`;
+                                    
+                                    requestAnimationFrame(() => {
+                                        flying.style.transform = `translate(${endX - rect.left}px, ${endY - rect.top}px) rotate(${540 + Math.random() * 720}deg) scale(${0.1 + Math.random() * 0.4})`;
+                                        flying.style.opacity = '0';
+                                    });
+
+                                    setTimeout(() => {
+                                        if (flying.parentNode) {
+                                            flying.parentNode.removeChild(flying);
+                                        }
+                                    }, 2500);
+                                }
+
+                                letter.style.transition = 'all 0.3s ease-out';
+                                letter.style.transform = 'scale(0)';
+                                letter.style.opacity = '0';
+                            });
+
+                            setTimeout(() => {
+                                console.log('🌟 Completando transición a main screen');
+                                introScreen.style.transition = 'opacity 1s ease-out';
+                                introScreen.style.opacity = '0';
+
+                                setTimeout(() => {
+                                    introScreen.classList.add('hidden');
+                                    introScreen.style.display = 'none';
+
+                                    mainScreen.classList.add('visible');
+                                    mainScreen.style.opacity = '1';
+
+                                    setTimeout(() => {
+                                        changeProject(0);
+                                        startProgress();
+                                        console.log('✅ Main screen inicializado');
+                                    }, 300);
+                                }, 1000);
+                            }, 4000);
+
+                        }, 2000);
+                    }
+                }, index * 150);
+            });
+        }
+        
+        // INICIALIZAR PRIMERA IMAGEN DE FONDO
+        function initProjectImages() {
+            console.log(`🖼️ Inicializando imagen de fondo única`);
+
+            if (PROJECTS[0]) {
+                updateBackgroundImage(0);
+            }
+        }
+
+        // ACTUALIZAR IMAGEN DE FONDO CON FALLBACK
+        function updateBackgroundImage(index) {
+            const fullBg = document.getElementById('full-bg');
+            if (fullBg && PROJECTS[index]) {
+                const localImageUrl = PROJECTS[index].image;
+                const timestamp = Date.now();
+
+                const img = new Image();
+                img.onload = () => {
+                    console.log(`📥 Imagen local cargada: ${PROJECTS[index].name}`);
+                    fullBg.style.backgroundImage = `url("${localImageUrl}?cache=${timestamp}")`;
+                    fullBg.classList.remove('active');
+                    setTimeout(() => {
+                        fullBg.classList.add('active');
+                    }, 100);
+                };
+                img.onerror = () => {
+                    console.log(`❌ Imagen local no encontrada, usando imagen temporal`);
+                    const fallbackSeeds = ['park-mansion', 'kawana', 'park-le-jade', 'sevens-villa', 'hikawa-gardens', 
+                                          'one-avenue', 'century-forest', 'proud', 'nishiazabu', 'itohpia', 'urban-villa', 'modern-house'];
+                    const fallbackUrl = `https://picsum.photos/seed/${fallbackSeeds[index]}/600/600`;
+                    fullBg.style.backgroundImage = `url("${fallbackUrl}")`;
+                    fullBg.classList.remove('active');
+                    setTimeout(() => {
+                        fullBg.classList.add('active');
+                    }, 100);
+                };
+                img.src = localImageUrl;
+            }
+        }
+        
+        // CAMBIAR PROYECTO SIN MOVER LOS CÍRCULOS
+        function changeProject(index) {
+            if (progressTimer) clearInterval(progressTimer);
+
+            console.log(`🔄 Cambiando al proyecto ${index + 1}: ${PROJECTS[index].name}`);
+
+            // SOLO transición suave del fondo
+            const fullBg = document.getElementById('full-bg');
+            if (fullBg) {
+                fullBg.classList.add('transitioning');
+            }
+
+            // Ocultar texto actual con efecto suave
+            document.querySelectorAll('.project-text').forEach(text => {
+                text.style.transform = 'translate(-50%, -50%) scale(0.8)';
+                text.style.opacity = '0';
+                text.classList.remove('active');
+            });
+
+            // Activar efecto agua SOLO en el borde (sin moverlo)
+            const circleBorder = document.querySelector('.circle-border');
+            if (circleBorder) {
+                circleBorder.classList.remove('water-effect');
+                setTimeout(() => {
+                    circleBorder.classList.add('water-effect');
+                }, 10);
+            }
+
+            // Cambiar contenido
+            setTimeout(() => {
+                updateBackgroundImage(index);
+                currentProject = index;
+
+                // Mostrar nuevo texto
+                const newText = document.querySelector(`.project-text[data-project="${index}"]`);
+                if (newText) {
+                    newText.classList.add('active');
+                    newText.style.transform = 'translate(-50%, -50%) scale(1)';
+                    newText.style.opacity = '1';
+                }
+
+                document.getElementById('current-num').textContent = (index + 1).toString();
+                // Actualizar barra por paradas - nuevo proyecto
+                updateProjectIndicator(index);
+
+                document.getElementById('prev-btn').disabled = (index === 0);
+                document.getElementById('next-btn').disabled = (index === PROJECTS.length - 1);
+            }, 100);
+
+            // Finalizar transición del fondo solamente
+            setTimeout(() => {
+                if (fullBg) {
+                    fullBg.classList.remove('transitioning');
+                }
+                console.log(`✅ Proyecto cambiado a: ${PROJECTS[index].name}`);
+            }, 400);
+        }
+        
+        // CONFIGURACIÓN DE INDICADOR DE PROYECTOS CON CSS
+        function setupProjectIndicator() {
+            console.log('🎯 Configurando indicador de proyectos con CSS');
+            const progressCircle = document.getElementById('progress-circle-css');
+            const dotsContainer = document.getElementById('project-dots');
+
+            if (progressCircle) {
+                console.log('✅ Progress circle CSS encontrado, configurando...', progressCircle);
+                // Configurar estado inicial (0% progreso)
+                progressCircle.style.transform = 'translate(-50%, -50%) rotate(-90deg)';
+                console.log('📊 Círculo CSS configurado para progreso inicial');
+            } else {
+                console.error('❌ Progress circle CSS NO encontrado');
+            }
+
+            if (dotsContainer) {
+                dotsContainer.innerHTML = '';
+
+                PROJECTS.forEach((project, index) => {
+                    const dot = document.createElement('div');
+                    dot.className = 'project-dot';
+                    dot.dataset.project = index;
+                    dot.title = project.name; // Tooltip
+
+                    // Calcular posición en el círculo exterior
+                    const angle = (index / PROJECTS.length) * 360 - 90; // Empezar desde arriba
+                    const radian = (angle * Math.PI) / 180;
+                    const dotRadius = 50; // Radio para posicionar los puntos
+
+                    const x = 50 + dotRadius * Math.cos(radian);
+                    const y = 50 + dotRadius * Math.sin(radian);
+
+                    dot.style.left = x + '%';
+                    dot.style.top = y + '%';
+
+                    // Eventos para navegación
+                    dot.addEventListener('click', (e) => {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        console.log(`🎯 Click en dot ${index}: ${project.name}`);
+                        changeProject(index);
+                        startProgress();
+                    });
+
+                    // Evento para arrastre (detectar cuando se mueve sobre otros dots)
+                    dot.addEventListener('mousedown', (e) => {
+                        isCircularDrag = true;
+                        e.preventDefault();
+                    });
+
+                    dotsContainer.appendChild(dot);
+                });
+
+                updateProjectIndicator(0);
+                console.log(`✅ Creados ${PROJECTS.length} puntos de proyecto arrastrables`);
+            }
+        }
+
+        // ACTUALIZAR INDICADOR POR PARADAS DE PROYECTO
+        function updateProjectIndicator(activeIndex) {
+            console.log(`📊 Actualizando indicador para proyecto ${activeIndex + 1}/${PROJECTS.length} - progreso por paradas`);
+
+            // Actualizar puntos
+            const dots = document.querySelectorAll('.project-dot');
+            dots.forEach((dot, index) => {
+                dot.classList.toggle('active', index === activeIndex);
+            });
+
+            // Actualizar barra circular POR PARADAS (proyecto completado)
+            const progressCircle = document.getElementById('progress-circle-css');
+            if (progressCircle) {
+                // Progreso por proyectos completados + proyecto actual
+                const completedProjects = activeIndex + 1;
+                const totalProgress = completedProjects / PROJECTS.length;
+                const degrees = totalProgress * 360;
+
+                progressCircle.style.background = `conic-gradient(
+                    from -90deg,
+                    rgba(255, 255, 255, 0.9) 0deg,
+                    rgba(255, 255, 255, 0.9) ${degrees}deg,
+                    transparent ${degrees}deg,
+                    transparent 360deg
+                )`;
+
+                console.log(`🔄 Barra por paradas: ${completedProjects}/${PROJECTS.length} proyectos, ${degrees.toFixed(1)}°`);
+            } else {
+                console.error('❌ Progress circle CSS no encontrado');
+            }
+        }
+
+        function startProgress() {
+            const progressBar = document.getElementById('progress-bar');
+            const duration = PROJECTS[currentProject].duration;
+            let progress = 0;
+
+            progressBar.style.width = '0%';
+
+            const increment = 100 / (duration / 50);
+
+            console.log(`⏱️ Iniciando progreso para proyecto ${currentProject + 1}, duración: ${duration}ms`);
+
+            progressTimer = setInterval(() => {
+                progress += increment;
+                progressBar.style.width = progress + '%';
+
+                // NO actualizar la barra circular aquí - solo se actualiza por paradas
+
+                if (progress >= 100) {
+                    clearInterval(progressTimer);
+                    console.log(`✅ Progreso completado para proyecto ${currentProject + 1}`);
+                    autoNextProject();
+                }
+            }, 50);
+        }
+        
+        function nextProject() {
+            if (currentProject < PROJECTS.length - 1) {
+                changeProject(currentProject + 1);
+                startProgress();
+            }
+        }
+
+        function previousProject() {
+            if (currentProject > 0) {
+                changeProject(currentProject - 1);
+                startProgress();
+            }
+        }
+
+        function autoNextProject() {
+            const nextIndex = (currentProject + 1) % PROJECTS.length;
+            changeProject(nextIndex);
+            startProgress();
+        }
+
+
+
+        // INICIALIZAR APLICACIÓN
+        function initApp() {
+            console.log('🚀 Inicializando aplicación LTSD');
+
+            const skipIntro = window.location.hash === '#projects';
+            
+            const introScreen = document.getElementById('intro-screen');
+            const mainScreen = document.getElementById('main-screen');
+
+            if (skipIntro) {
+                console.log('🎯 Saltando intro, yendo directo a proyectos');
+                if (introScreen) {
+                    introScreen.style.display = 'none';
+                    introScreen.classList.add('hidden');
+                }
+                if (mainScreen) {
+                    mainScreen.classList.add('visible');
+                    mainScreen.style.opacity = '1';
+                    mainScreen.style.transform = 'scale(1)';
+                }
+                
+                initProjectImages();
+                setupCircleInteraction();
+                setupProjectIndicator();
+                changeProject(0);
+                startProgress();
+                
+                window.history.replaceState(null, null, window.location.pathname);
+            } else {
+                if (introScreen) {
+                    introScreen.classList.remove('hidden');
+                    introScreen.style.opacity = '1';
+                    introScreen.style.transform = 'scale(1)';
+                    console.log('✅ Intro screen visible');
+                }
+
+                if (mainScreen) {
+                    mainScreen.classList.remove('visible');
+                    mainScreen.style.opacity = '0';
+                    console.log('��� Main screen oculto');
+                }
+
+                createParticles();
+
+                setTimeout(() => {
+                    animateIntroText();
+                }, 500);
+
+                initProjectImages();
+                setupCircleInteraction();
+                setupProjectIndicator();
+            }
+        }
+        
+        // FUNCIONES DE MODAL
+        function showAllProjects() {
+            const modal = document.getElementById('all-modal');
+            const grid = document.getElementById('projects-grid');
+
+            grid.innerHTML = '';
+
+            PROJECTS.forEach((project, index) => {
+                const card = document.createElement('div');
+                card.className = 'project-card';
+                card.style.backgroundImage = `url("${project.image}")`;
+                card.onclick = () => goToProject(index);
+
+                card.innerHTML = `
+                    <div class="project-card-overlay">
+                        <div class="project-card-title">${project.name}</div>
+                        <div class="project-card-location">${project.location}</div>
+                    </div>
+                `;
+
+                grid.appendChild(card);
+            });
+
+            modal.classList.add('visible');
+        }
+
+        function closeAllProjects() {
+            document.getElementById('all-modal').classList.remove('visible');
+        }
+
+        function showAbout() {
+            document.getElementById('about-modal').classList.add('visible');
+        }
+
+        function closeAbout() {
+            document.getElementById('about-modal').classList.remove('visible');
+        }
+
+        function goToProject(index) {
+            const projectUrls = [
+                'projects/park-mansion-nuevo.html',
+                'projects/kawana-nuevo.html',
+                'projects/park-mansion-nuevo.html',
+                'projects/kawana-nuevo.html',
+                'projects/park-mansion-nuevo.html',
+                'projects/kawana-nuevo.html',
+                'projects/park-mansion-nuevo.html',
+                'projects/kawana-nuevo.html',
+                'projects/park-mansion-nuevo.html',
+                'projects/kawana-nuevo.html',
+                'projects/park-mansion-nuevo.html',
+                'projects/kawana-nuevo.html'
+            ];
+
+            window.location.href = projectUrls[index] || 'projects/park-mansion-nuevo.html';
+        }
+
+        document.addEventListener('click', (e) => {
+            if (e.target.closest('.circle-container')) {
+                goToProject(currentProject);
+            }
+        });
+        
+        console.log('🔄 Registrando DOMContentLoaded listener');
+        document.addEventListener('DOMContentLoaded', () => {
+            console.log('📱 DOM Content Loaded - iniciando app');
+            initApp();
+        });
+
+        if (document.readyState === 'loading') {
+            console.log('⏳ DOM still loading, waiting for DOMContentLoaded');
+        } else {
+            console.log('⚡ DOM already loaded, iniciando inmediatamente');
+            setTimeout(initApp, 100);
+        }
+
+        console.log('🎉 LTSD App script cargado completamente');
+    </script>
+</body>
+</html>
